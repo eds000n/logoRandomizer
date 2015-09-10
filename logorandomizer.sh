@@ -5,9 +5,14 @@ num=1
 height=256
 width=256
 convert_options=""
-while getopts "f:n:r:" opt
+while getopts "hf:n:r:" opt
 do
 	case $opt in
+		h)
+			echo "Form of use"
+			echo "./logoRandomizer -f filename -n <number_of_images> -r <height>x<width>"
+			exit 0
+		;;
 		n)
 			num=$OPTARG
 		;;
@@ -48,7 +53,9 @@ outfile="$fname"
 # 2svg image
 function_2svg(){
 	uniconvertor $1 $svgfile 2>/dev/null
-	inkscape --verb=FitCanvasToDrawing --verb=FileSave --verb=FileClose $svgfile
+	#inkscape --verb=FitCanvasToDrawing --verb=FileSave --verb=FileClose $svgfile
+	#FIXME: check inkscape version or try wheter it also works on versions<0.91
+	inkscape --verb=FitCanvasToDrawing --verb=FileSave --verb=FileClose --verb=FileQuit $svgfile
 }
 
 # resize image width height
