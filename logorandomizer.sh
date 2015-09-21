@@ -53,9 +53,14 @@ outfile="$fname"
 # 2svg image
 function_2svg(){
 	uniconvertor $1 $svgfile 2>/dev/null
-	#inkscape --verb=FitCanvasToDrawing --verb=FileSave --verb=FileClose $svgfile
-	#FIXME: check inkscape version or try wheter it also works on versions<0.91
-	inkscape --verb=FitCanvasToDrawing --verb=FileSave --verb=FileClose --verb=FileQuit $svgfile
+	version=`inkscape --version | cut -d' ' -f2 | cut -d. -f2`
+	# The version has to be checked because of inkscape changed its behavior since version 0.91 for the FileClose verb.
+	if [ "$version" -lt "91" ] 
+	then
+		inkscape --verb=FitCanvasToDrawing --verb=FileSave --verb=FileClose $svgfile
+	else
+		inkscape --verb=FitCanvasToDrawing --verb=FileSave --verb=FileClose --verb=FileQuit $svgfile
+	fi
 }
 
 # resize image width height
@@ -124,6 +129,45 @@ waving(){	#ID 6
 	convert_options="$convert_options -wave ${amp}x${lambda}"
 }
 
+editsvg(){	#ID 7
+	#sed "s/m \([0-9]*\.[0-9]*\),\([0-9]*\.[0-9]*\)/m \1 \2/g"
+	#grep -E "m [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*"
+	lines=`grep -E path $1 | wc -l`
+	ln=`expr $RANDOM % $lines`
+	let "ln+=1"
+	echo "**** ln $ln"
+	if [ `expr $ln % 2` -eq 0 ] #check to add or subtract for dx
+	then
+		dx="1.0`expr $RANDOM % 100`"
+	else
+		dx="0.0`expr 100 - $RANDOM % 100`"
+	fi
+	if [ `expr $lines % 2` -eq 0 ] #check to add of subtract for dy
+	then
+		dy="1.0`expr $RANDOM % 100`"
+	else
+		dy="0.0`expr 100 - $RANDOM % 100`"
+	fi
+	echo "~~~ dx $dx"
+	echo "~~~ dy $dy"
+	#valx=`grep -E "m [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*" $1 | sed -n ${ln},${ln}p | awk -F" " '{print \$2}' | awk -F"," '{print \$1}'`
+	#valy=`grep -E "m [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*" $1 | sed -n ${ln},${ln}p | awk -F" " '{print \$2}' | awk -F"," '{print \$2}'`
+	val=`grep -E "m [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*" $1 | sed -n ${ln},${ln}p`
+	#valy=`grep -E "m [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*" $1 | sed -n ${ln},${ln}p`
+	echo "++- val $val"
+	val=`echo $val | awk -F " " '{print \$2}'`
+	echo "+++ val $val"
+	#valy=`awk -F " " '{print \$2}'`
+	valx=`echo $val | awk -F "," '{print \$1}'`	
+	valy=`echo $val | awk -F "," '{print \$2}'`	
+	echo ";;; valx $valx"
+	echo ";;; valy $valy"
+	valfx=`echo "$dx * $valx" | bc -l`
+	valfy=`echo "$dy * $valy" | bc -l`
+	echo "=== valfx $valfx"
+	echo "=== valfy $valfy"
+	sed "s/m $valx,$valy/m $valfx,$valfy/" $1 
+}
 ####################################################
 ######### End of transformation functions ##########
 ####################################################
@@ -166,7 +210,8 @@ then
 fi
 function_resize $svgfile $height $width
 #applyTransformations $svgfile 
-
+editsvg $svgfile
+exit 0
 
 #supports up to 7! transformations
 for i in `seq 1 $num`
