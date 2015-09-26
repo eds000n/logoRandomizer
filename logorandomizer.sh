@@ -53,6 +53,11 @@ outfile="$fname"
 # 2svg image
 function_2svg(){
 	uniconvertor $1 $svgfile 2>/dev/null
+	if [ ! -f $svgfile ]
+	then
+		echo "Error on conversion to svg, please verify input file"
+		exit 1
+	fi
 	version=`inkscape --version | cut -d' ' -f2 | cut -d. -f2`
 	# The version has to be checked because of inkscape changed its behavior since version 0.91 for the FileClose verb.
 	if [ "$version" -lt "91" ] 
@@ -129,7 +134,7 @@ waving(){	#ID 6
 	convert_options="$convert_options -wave ${amp}x${lambda}"
 }
 
-editsvg(){	#ID 7
+editSVGTranslation(){	#ID 7
 	#sed "s/m \([0-9]*\.[0-9]*\),\([0-9]*\.[0-9]*\)/m \1 \2/g"
 	#grep -E "m [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*"
 	lines=`grep -E "m [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*" $1 | wc -l `
@@ -170,6 +175,34 @@ editsvg(){	#ID 7
 	#echo "=== valfy $valfy"
 	sed -i "s/m $valx,$valy/m $valfx,$valfy/" $1
 }
+
+editSVGColor(){		#ID 8
+	lines=`grep -E "fill:#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})" $1 | wc -l`
+	ln=`expr $RANDOM % $lines`
+	let "ln+=1"
+	hexline=`grep -E "fill:#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})" $1 | sed -n ${ln},${ln}p`
+	hexval=`echo $hexline | sed "s/.*#\([0-9a-f]\{6\}\).*/\1/g"`
+	red=`expr $RANDOM % 256`
+	red=`echo "obase=16; $red" | bc`
+	green=`expr $RANDOM % 256`
+	green=`echo "obase=16; $green" | bc`
+	blue=`expr $RANDOM % 256`
+	blue=`echo "obase=16; $blue" | bc`
+	nhexval="${red}${green}${blue}"
+	sed -i "s/$hexval/$nhexval/" $1
+}
+
+editSVGBezier(){	#ID 9
+	lines=`grep -E "c [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]* [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]* [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*" $1 | wc -l `
+	ln=`expr $RANDOM % $lines`
+	let "ln+=1"
+	cval=`grep -E "c [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]* [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]* [-+]?[0-9]*\.?[0-9]*,[-+]?[0-9]*\.?[0-9]*" $1 | sed -n ${ln},${ln}p `
+	multiplier="0.90 0.91 0.92 0.93 0.94 0.95 0.96 0.97 0.98 0.99 1.01 1.02 1.03 1.04 1.05 1.06 1.07 1.08 1.09 1.10"
+	rnd=`expr $RANDOM % 20 + 1`
+	pp=`echo $multiplier | awk -F " " -v rnd=$rnd '{print $rnd}'`
+	#x1=echo $cval | awk -F " " '{print }'
+}
+
 ####################################################
 ######### End of transformation functions ##########
 ####################################################
@@ -212,7 +245,8 @@ then
 fi
 function_resize $svgfile $height $width
 #applyTransformations $svgfile 
-editsvg $svgfile
+editSVGTranslation $svgfile
+editSVGColor $svgfile
 
 #supports up to 7! transformations
 for i in `seq 1 $num`
