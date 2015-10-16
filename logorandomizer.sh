@@ -333,6 +333,7 @@ for i in `seq 1 $num`
 do
 	#FIXME: Check repetions to avoid them
 sleep 1s
+	cp $svgfile ${svgfile}.old
 	convert_options=""
 	#tr=`expr $RANDOM % 128`
 	tr=`expr $RANDOM % 1024`
@@ -394,5 +395,6 @@ sleep 1s
 		echo " "
 	fi
 	sc=`convert $convert_options $svgfile "$outfile.${i}.png"`
+	mv ${svgfile}.old $svgfile
 done
 
