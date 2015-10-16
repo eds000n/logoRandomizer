@@ -224,7 +224,7 @@ editSVGColor(){		#ID 8
 	ln=`expr $RANDOM % $lines`
 	let "ln+=1"
 	hexline=`grep -E "fill:#([A-Fa-f0-9]{6}|[A-Fa-f0-9]{3})" $1 | sed -n ${ln},${ln}p`
-	hexval=`echo $hexline | sed "s/.*#\([0-9a-f]\{6\}\).*/\1/g"`
+	hexval=`echo $hexline | sed "s/.*#\([0-9a-fA-F]\{6\}\).*/\1/g"`
 	red=`expr $RANDOM % 256`
 	red=`echo "obase=16; $red" | bc`
 	green=`expr $RANDOM % 256`
@@ -237,6 +237,7 @@ editSVGColor(){		#ID 8
 	then
 		echo "==== editSVGColor params ===="
 		echo "line number (after matching): $ln"
+		echo "hexline: $hexline"
 		echo "old color: $hexval"
 		echo "new color: $nhexval"
 	fi
@@ -390,6 +391,7 @@ sleep 1s
 	if [ $verbose -eq 1 ]
 	then
 		echo "convert $convert_options $svgfile $outfile"
+		echo " "
 	fi
 	sc=`convert $convert_options $svgfile "$outfile.${i}.png"`
 done
